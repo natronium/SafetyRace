@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using BepInEx;
 using Echodog;
 using HarmonyLib;
@@ -50,27 +50,43 @@ namespace SafetyRace
       [HarmonyPatch("Go")]
       static void PostGo()
       {
-        TextMeshPro startButtonText = TitleController.Instance.texts[0];
+        GameObject startButton = GameObject.Find("Background/Logo/Buttons/Continue");
+        TextMeshPro startButtonText = startButton.transform.GetComponentInChildren<TextMeshPro>();
+        ButtonPlus startButtonPlus = startButton.transform.GetComponentInChildren<ButtonPlus>();
+        OutlineAnimation startButtonHighlight = GameObject.Find("Continue/Sprite/Highlight")
+          .transform.GetComponentInChildren<OutlineAnimation>();
         if (startButtonText.text == "BEGIN STORY")
         {
           startButtonText.text = "BEGIN RACE";
+          startButtonHighlight.spriteRenderer.size = new Vector2(3.6f, startButtonHighlight.spriteRenderer.size.y);
         }
         else if (startButtonText.text == "CONTINUE STORY" && ReshuffleEvents.Contains(SaveManager.Instance.currentEvent))
         {
           startButtonText.text = "RETRY CONVERSATION";
+          startButtonHighlight.spriteRenderer.size = new Vector2(6.7f, startButtonHighlight.spriteRenderer.size.y);
 
           GameObject buttonsContainer = GameObject.Find("Background/Logo/Buttons");
-          GameObject continueButton = GameObject.Find("Background/Logo/Buttons/Continue");
           GameObject customButton = GameObject.Find("Custom Button") ??
-          	UnityEngine.Object.Instantiate(continueButton, buttonsContainer.transform);
+          	UnityEngine.Object.Instantiate(startButton, buttonsContainer.transform);
+
+          buttonsContainer.transform.position += Vector3.down * 0.6f;
 
           customButton.name = "Custom Button";
-          customButton.transform.position = new Vector3(6.7f, -29.5f, 0f);
-          var customTextMesh = customButton.transform.GetComponentInChildren<TMPro.TextMeshPro>();
-          customTextMesh.text = "RESHUFFLE";
-          customTextMesh.alpha = 1;
+          customButton.transform.position = new Vector3(0.4f, -28.8f, 0f);
+          var customButtonText = customButton.transform.GetComponentInChildren<TMPro.TextMeshPro>();
+          customButtonText.text = "RESHUFFLE";
+          customButtonText.alpha = 1;
 
-          var customButtonPlus = customButton.transform.GetComponentInChildren<ButtonPlus>();
+          ButtonPlus customButtonPlus = customButton.transform.GetComponentInChildren<ButtonPlus>();
+          OutlineAnimation customButtonHighlight = GameObject.Find("Custom Button/Sprite/Highlight")
+            .transform.GetComponentInChildren<OutlineAnimation>();
+          
+          customButtonHighlight.spriteRenderer.size = new Vector2(3f, customButtonHighlight.spriteRenderer.size.y);
+          
+          TitleController.Instance.buttons.Insert(0, customButtonPlus);
+          TitleController.Instance.texts.Insert(0, customButtonText);
+          TitleController.Instance.highlights.Insert(0, customButtonHighlight);
+          customButtonPlus.onHighlight += TitleController.Instance.OnHighlight;
 
           customButtonPlus.onPress += delegate (PointerEventData whatever) {
             IsReshuffle = true;
@@ -79,6 +95,7 @@ namespace SafetyRace
         else
         {
           startButtonText.text = "CONTINUE RACE";
+          startButtonHighlight.spriteRenderer.size = new Vector2(4.7f, startButtonHighlight.spriteRenderer.size.y);
         }
 
         //Only set the menu text alpha *after* the first title screen load, so that we don't stomp
