@@ -3,6 +3,8 @@ using BepInEx;
 using Echodog;
 using HarmonyLib;
 using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace SafetyRace
 {
@@ -10,8 +12,8 @@ namespace SafetyRace
   public class Plugin : BaseUnityPlugin
   {
     static Plugin Instance;
-    static bool JustLoaded;
     static bool IsFirstLoad = true;
+    static bool IsReshuffle = false;
 
     static List<string> ReshuffleEvents = new List<string>() {
         "gull_intro", "talia_fish", "oscar_welcome",
@@ -35,7 +37,13 @@ namespace SafetyRace
       static void PostLoadGame()
       {
         Instance.Logger.LogDebug("Game reload detected: watching for next event");
-        JustLoaded = true;
+        SaveManager saveMan = Bootstrap.Instance.menu.save;
+        if (IsReshuffle) {
+          saveMan.ImportantRandomValue();
+          saveMan.Save();
+        }
+
+        IsReshuffle = false;
       }
 
       [HarmonyPostfix]
@@ -49,7 +57,24 @@ namespace SafetyRace
         }
         else if (firstButtonText.text == "CONTINUE STORY" && ReshuffleEvents.Contains(SaveManager.Instance.currentEvent))
         {
-          firstButtonText.text = "RESHUFFLE";
+          firstButtonText.text = "RETRY CONVERSATION";
+
+          GameObject buttonsContainer = GameObject.Find("Background/Logo/Buttons");
+          GameObject continueButton = GameObject.Find("Background/Logo/Buttons/Continue");
+          GameObject customButton = GameObject.Find("Custom Button") ??
+          	UnityEngine.Object.Instantiate(continueButton, buttonsContainer.transform);
+
+          customButton.name = "Custom Button";
+          customButton.transform.position = new Vector3(6.7f, -29.5f, 0f);
+          var customTextMesh = customButton.transform.GetComponentInChildren<TMPro.TextMeshPro>();
+          customTextMesh.text = "RESHUFFLE";
+          customTextMesh.alpha = 1;
+
+          var customButtonPlus = customButton.transform.GetComponentInChildren<ButtonPlus>();
+
+          customButtonPlus.onPress += delegate (PointerEventData whatever) {
+            IsReshuffle = true;
+          };
         }
         else
         {
@@ -73,27 +98,5 @@ namespace SafetyRace
       }
     } //hook TitleController.LoadGame & Go
 
-    [HarmonyPatch(typeof(Echodog.GameController))]
-    private static class GameControllerPatch
-    {
-
-      [HarmonyPostfix]
-      [HarmonyPatch("Init")]
-      static void PostInit(GameController __instance, EventData eventData)
-      {
-        if (JustLoaded)
-        {
-          JustLoaded = false;
-          if (ReshuffleEvents.Contains(eventData.id))
-          {
-            Instance.Logger.LogDebug($"Reshuffling decks for event {eventData.id}");
-            __instance.runner.game.player.deck.ShuffleInPlace();
-            __instance.runner.game.npc.deck.ShuffleInPlace();
-          }
-        }
-      }
-
-
-    } //hook GameController.Init
   }
 }
