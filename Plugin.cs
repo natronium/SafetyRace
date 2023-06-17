@@ -56,10 +56,14 @@ namespace SafetyRace
           firstButtonText.text = "CONTINUE RACE";
         }
 
+        //Only set the menu text alpha *after* the first title screen load, so that we don't stomp
+        // all over their pretty animations (that cause this problem in the first place)
         if (!IsFirstLoad)
         {
           // all the TMP button text has alpha 0 by default, and updating the text redraws it transparent as a result
-          firstButtonText.alpha = 1;
+          foreach (TextMeshPro text in TitleController.Instance.texts) {
+            text.alpha = 1;
+          }
         }
         else
         {
