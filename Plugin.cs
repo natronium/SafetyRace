@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using BepInEx;
 using Echodog;
 using HarmonyLib;
@@ -50,14 +50,14 @@ namespace SafetyRace
       [HarmonyPatch("Go")]
       static void PostGo()
       {
-        TextMeshPro firstButtonText = TitleController.Instance.texts[0];
-        if (firstButtonText.text == "BEGIN STORY")
+        TextMeshPro startButtonText = TitleController.Instance.texts[0];
+        if (startButtonText.text == "BEGIN STORY")
         {
-          firstButtonText.text = "BEGIN RACE";
+          startButtonText.text = "BEGIN RACE";
         }
-        else if (firstButtonText.text == "CONTINUE STORY" && ReshuffleEvents.Contains(SaveManager.Instance.currentEvent))
+        else if (startButtonText.text == "CONTINUE STORY" && ReshuffleEvents.Contains(SaveManager.Instance.currentEvent))
         {
-          firstButtonText.text = "RETRY CONVERSATION";
+          startButtonText.text = "RETRY CONVERSATION";
 
           GameObject buttonsContainer = GameObject.Find("Background/Logo/Buttons");
           GameObject continueButton = GameObject.Find("Background/Logo/Buttons/Continue");
@@ -78,7 +78,7 @@ namespace SafetyRace
         }
         else
         {
-          firstButtonText.text = "CONTINUE RACE";
+          startButtonText.text = "CONTINUE RACE";
         }
 
         //Only set the menu text alpha *after* the first title screen load, so that we don't stomp
