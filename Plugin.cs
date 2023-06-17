@@ -53,7 +53,7 @@ namespace SafetyRace
         }
         else
         {
-          firstButtonText.text = "CONTINUE STORY*";
+          firstButtonText.text = "CONTINUE RACE";
         }
 
         if (!IsFirstLoad)
